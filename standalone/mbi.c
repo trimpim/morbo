@@ -17,6 +17,11 @@ mbi_find_memory(const struct mbi *multiboot_info, size_t len,
   size_t mmap_len    = multiboot_info->mmap_length;
   memory_map_t *mmap = (memory_map_t *)multiboot_info->mmap_addr;
 
+  uint64_t const limit_to = 1ULL << 31; //2G
+  /* be paranoid */
+  if (limit_to <= len)
+    return false;
+
   while ((uint32_t)mmap < multiboot_info->mmap_addr + mmap_len) {
     uint64_t block_len  = (uint64_t)mmap->length_high<<32 | mmap->length_low;
     uint64_t block_addr = (uint64_t)mmap->base_addr_high<<32 | mmap->base_addr_low;
@@ -29,15 +34,21 @@ mbi_find_memory(const struct mbi *multiboot_info, size_t len,
     block_len  = block_len & ~0xFFF;
     block_addr = nblock_addr;
 
-    if ((mmap->type == MMAP_AVAILABLE) && ((block_addr >> 32) == 0ULL) &&
-        (block_len >= len)) {
+    if ((mmap->type == MMAP_AVAILABLE) && (block_len >= len) &&
+        (block_addr <= limit_to - len)) {
 
       if ((found == true) && ((uintptr_t)*block_start_out > block_addr))
         continue;
 
       found = true;
-      *block_start_out = (void *)(uintptr_t)block_addr;
-      *block_len_out   = (size_t)block_len;
+
+      /* take care that (block_addr+len) is below limit_to */
+      uint64_t top_addr = block_addr + block_len;
+      if (top_addr > limit_to)
+        top_addr = limit_to;
+
+      *block_start_out = (void *)(uintptr_t)top_addr - len;
+      *block_len_out   = (size_t)len;
 
       if (!highest) return true;
     }
