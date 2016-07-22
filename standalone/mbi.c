@@ -11,13 +11,12 @@
 bool
 mbi_find_memory(const struct mbi *multiboot_info, size_t len,
                 void **block_start_out, size_t *block_len_out,
-                bool highest)
+                bool highest, uint64_t const limit_to)
 {
   bool found         = false;
   size_t mmap_len    = multiboot_info->mmap_length;
   memory_map_t *mmap = (memory_map_t *)multiboot_info->mmap_addr;
 
-  uint64_t const limit_to = 1ULL << 31; //2G
   /* be paranoid */
   if (limit_to <= len)
     return false;
@@ -117,7 +116,7 @@ gzip_info(struct module *mod, size_t *uncompressed)
  * we consider this as fatal error (panic).
  */
 void
-mbi_relocate_modules(struct mbi *mbi, bool uncompress)
+mbi_relocate_modules(struct mbi *mbi, bool uncompress, uint64_t phys_max)
 {
   size_t size = 0;
   bool need_inflate = false;
@@ -152,7 +151,7 @@ mbi_relocate_modules(struct mbi *mbi, bool uncompress)
   void *block;
   size_t block_len;
 
-  if (mbi_find_memory(mbi, size, &block, &block_len, true)) {
+  if (mbi_find_memory(mbi, size, &block, &block_len, true, phys_max)) {
     /* Check for overlap */
     uintptr_t reladdr = (uintptr_t)block + block_len - size;
     for (unsigned i = 0; i < mbi->mods_count; i++) {

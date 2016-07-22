@@ -90,5 +90,5 @@ main(uint32_t magic, struct mbi *mbi)
 
   printf("Bender: Hello World.\n");
 
-  return start_module(mbi, false);
+  return start_module(mbi, false, 1ULL << 31); // relocate below 2G phys
 }
