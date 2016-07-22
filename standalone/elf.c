@@ -65,7 +65,8 @@ start_module(struct mbi *mbi, bool uncompress, uint64_t phys_max)
     return -1;
   }
 
-  mbi_relocate_modules(mbi, uncompress, phys_max);
+  if (phys_max)
+    mbi_relocate_modules(mbi, uncompress, phys_max);
 
   // skip module after loading
   struct module *m  = (struct module *) mbi->mods_addr;
