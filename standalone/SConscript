@@ -51,6 +51,7 @@ stand = fenv.StaticLibrary('stand',
                              'start.asm',
                              'util.c',
                              'version.c',
+                             'vga.c',
 
                              # libc stuff
                              'memcpy.c',

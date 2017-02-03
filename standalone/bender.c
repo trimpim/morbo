@@ -8,6 +8,7 @@
 #include <version.h>
 #include <serial.h>
 #include <bda.h>
+#include <vga.h>
 
 /* Configuration (set by command line parser) */
 static bool be_promisc = false;
@@ -27,15 +28,12 @@ parse_cmdline(const char *cmdline)
        token != NULL;
        token = strtok_r(NULL, " ", &last_ptr), i++) {
 
-    /* Our name is not interesting. */
-    if (i == 0)
-      continue;
-
-    if (strcmp(token, "promisc") == 0) {
+    if (strcmp(token, "promisc") == 0)
       be_promisc = true;
-    }
     if (strcmp(token, "norelocate") == 0)
       phys_max_relocate = 0;
+    if (strcmp(token, "vga") == 0)
+      vga_init();
   }
 }
 
