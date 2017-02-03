@@ -16,6 +16,7 @@
 #include <stdarg.h>
 #include <serial.h>
 #include <util.h>
+#include <vga.h>
 
 /**
  * Wait roughly a given number of milliseconds.
@@ -71,23 +72,7 @@ __exit(unsigned status)
 int
 out_char(unsigned value)
 {
-#define BASE(ROW) ((unsigned short *) (0xb8000+ROW*160))
-  static unsigned int col;
-  if (value!='\n')
-    {
-      unsigned short *p = BASE(24)+col;
-      *p = 0x0f00 | value;
-      col++;
-    }
-  if (col>=80 || value == '\n')
-    {
-      col=0;
-      unsigned short *p=BASE(0);
-      memcpy(p, p+80, 24*160);
-      memset(BASE(24), 0, 160);
-    }
-
-
+  vga_output(value);
   serial_send(value);
 
   if (value == '\n')
