@@ -12,6 +12,7 @@
 /* Configuration (set by command line parser) */
 static bool be_promisc = false;
 static uint64_t phys_max_relocate = 1ULL << 31; /* below 2G */
+static bool serial_fallback = false;
 
 void
 parse_cmdline(const char *cmdline)
@@ -36,6 +37,8 @@ parse_cmdline(const char *cmdline)
     }
     if (strcmp(token, "phys_max=256M") == 0)
       phys_max_relocate = 256ULL * 1024 * 1024;
+    if (strcmp(token, "serial_fallback") == 0)
+      serial_fallback = true;
   }
 }
 
@@ -115,6 +118,14 @@ main(uint32_t magic, void *multiboot)
     } else {
       printf("I/O ports for controller not found.\n");
     }
+  }
+
+  /* If no PCI serial card was found and serial fallback is set, use 3f8 (qemu) */
+  if (!serial_ctrl.cfg_address && !iobase && !serial_ports(get_bios_data_area()) &&
+      serial_fallback)
+  {
+      *com0_port      = 0x3f8;
+      *equipment_word = (*equipment_word & ~(0xF << 9)) | (1 << 9); /* One COM port available */
   }
 
   if (serial_ports(get_bios_data_area()))
