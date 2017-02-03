@@ -44,6 +44,7 @@ enum pci_subclass {
 
 enum pci_config_space {
   PCI_CFG_VENDOR_ID = 0x0,
+  PCI_CFG_CMD   = 0x04,
   PCI_CFG_REVID = 0x08,         /* Read uint32 to get class code in upper 16bit */
   PCI_CFG_BAR0  = 0x10,
   PCI_CFG_BAR1  = 0x14,
@@ -58,6 +59,7 @@ enum pci_constants {
   PCI_CONF_HDR_CAP = 52,
   PCI_CAP_OFFSET = 1,
   PCI_CAP_ID_EXP   = 0x10,
+  PCI_CMD_IO = 1,
   PCI_EXP_TYPE_PCI_BRIDGE=0x7,
   PCI_BAR_TYPE_MASK = 1U,
   PCI_BAR_TYPE_IO   = 1U,
@@ -75,6 +77,7 @@ uint32_t pci_read_uint32(unsigned addr);
 
 
 uint32_t pci_cfg_read_uint32(const struct pci_device *dev, uint32_t offset);
+void pci_cfg_write_uint8(const struct pci_device *dev, uint32_t offset, uint8_t value);
 
 /* Find a device by its class. Always finds the last device of the
    given class. On success, returns true and fills out the given
