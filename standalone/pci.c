@@ -47,6 +47,12 @@ pci_write_uint32(unsigned addr, uint32_t value)
   outl(PCI_DATA_PORT, value);
 }
 
+void
+pci_write_uint8(unsigned addr, uint8_t value)
+{
+  outl(PCI_ADDR_PORT, addr);
+  outb(PCI_DATA_PORT, value);
+}
 
 /* Fillout pci_device structure. */
 void
@@ -112,6 +118,12 @@ uint32_t
 pci_cfg_read_uint32(const struct pci_device *dev, uint32_t offset)
 {
   return pci_read_uint32(dev->cfg_address + offset);
+}
+
+void
+pci_cfg_write_uint8(const struct pci_device *dev, uint32_t offset, uint8_t value)
+{
+  return pci_write_uint8(dev->cfg_address + offset, value);
 }
 
 /* EOF */

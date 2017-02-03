@@ -101,6 +101,11 @@ main(uint32_t magic, void *multiboot)
       }
     }
 
+    uint32_t command = pci_cfg_read_uint32(&serial_ctrl, PCI_CFG_CMD);
+
+    if (!(command & PCI_CMD_IO))
+      pci_cfg_write_uint8(&serial_ctrl, PCI_CFG_CMD, command | PCI_CMD_IO);
+
     iobase = apply_quirks(&serial_ctrl, iobase);
 
     if (iobase != 0) {
