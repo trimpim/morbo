@@ -22,10 +22,23 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <mbi.h>
+#include <elf.h>
 
-bool mbi_find_memory(const struct mbi *multiboot_info, size_t len,
-                     void **block_start, size_t *block_len,
-                     bool highest);
+void exclude_bender_binary(uint64_t *block_addr, uint64_t *block_len);
+bool overlap_bender_binary(struct ph64 const * p);
+
+static inline bool in_range(struct ph64 const * p, uint64_t start, uint64_t size)
+{
+  return ((p->p_paddr <= start && start < p->p_paddr + p->p_memsz) ||
+          (p->p_paddr <  start+size && start+size <= p->p_paddr + p->p_memsz));
+}
+
+static inline bool mod_overlap(uint32_t mod_start, uint32_t mod_end,
+                               struct ph64 const * p)
+{
+  return (mod_start <= p->p_paddr && p->p_paddr < mod_end) ||
+         (mod_start <  p->p_paddr + p->p_memsz && p->p_paddr + p->p_memsz <= mod_end);
+}
 
 void *mbi_alloc_protected_memory(struct mbi *multiboot_info, size_t len, unsigned align);
 
