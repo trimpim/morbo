@@ -11,8 +11,8 @@ SECTIONS
 {
   ENTRY(_start)
 
-  /* 1 MB */
-  . = 0x100000;
+  /* 1.5 MB */
+  . = 0x180000;
   _image_start = .;
 
   .text :
