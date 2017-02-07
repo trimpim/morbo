@@ -119,9 +119,10 @@ elf_phdr(struct ph64 const *ph, void * code)
 }
 
 int
-load_elf(void const * mbi, uint32_t const binary, uint32_t const magic)
+load_elf(void const * mbi, uint32_t const binary, uint32_t const magic,
+         uint32_t const jump_code)
 {
-  uint8_t *code = (uint8_t *)0x7C00;
+  uint8_t *code = (uint8_t *)jump_code;
   struct segment_info info = { .jump_code = &code, .binary = binary };
 
   int error = for_each_phdr(binary, &info, elf_phdr);
@@ -150,7 +151,7 @@ load_elf(void const * mbi, uint32_t const binary, uint32_t const magic)
   }
 
   gen_jmp_edx(&code);
-  asm volatile  ("jmp *%%edx" :: "a" (0), "d" (0x7C00), "b" (mbi));
+  asm volatile  ("jmp *%%edx" :: "a" (0), "d" (jump_code), "b" (mbi));
 
   /* NOT REACHED */
   return 0;
