@@ -27,17 +27,24 @@
 void exclude_bender_binary(uint64_t *block_addr, uint64_t *block_len);
 bool overlap_bender_binary(struct ph64 const * p);
 
-static inline bool in_range(struct ph64 const * p, uint64_t start, uint64_t size)
+static inline bool overlap(uint64_t mod_start, uint64_t mod_end,
+                           struct ph64 const * p)
 {
-  return ((p->p_paddr <= start && start < p->p_paddr + p->p_memsz) ||
-          (p->p_paddr <  start+size && start+size <= p->p_paddr + p->p_memsz));
+  if (p->p_memsz == 0)
+    return false;
+
+  uint64_t const p_first = p->p_paddr;
+  uint64_t const p_last  = p->p_paddr + p->p_memsz - 1;
+
+  return !((mod_end < p_first) || (p_last < mod_start));
 }
 
-static inline bool mod_overlap(uint32_t mod_start, uint32_t mod_end,
-                               struct ph64 const * p)
+static inline bool in_range(struct ph64 const * p, uint64_t start, uint64_t size)
 {
-  return (mod_start <= p->p_paddr && p->p_paddr < mod_end) ||
-         (mod_start <  p->p_paddr + p->p_memsz && p->p_paddr + p->p_memsz <= mod_end);
+  if (size == 0)
+    return false;
+
+  return overlap(start, start + size - 1, p);
 }
 
 void *mbi_alloc_protected_memory(struct mbi *multiboot_info, size_t len, unsigned align);

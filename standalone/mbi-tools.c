@@ -26,22 +26,33 @@ void exclude_bender_binary(uint64_t *block_addr, uint64_t *block_len)
   uintptr_t image_start = (uintptr_t)&_image_start;
   uintptr_t image_end   = (uintptr_t)&_image_end;
 
+  if (!*block_len)
+    return;
+
+  /* check that block is not completely part of the bender image */
+  if (image_start <= *block_addr && (*block_addr + *block_len - 1) <= image_end) {
+    *block_len = 0;
+    return;
+  }
+
+  /* cut bender out of block and determine largest block of the up to 2 new bender free blocks */
   if (*block_addr <= image_start && image_start < *block_addr + *block_len) {
-      uint32_t front_len = image_start - *block_addr;
-      if (*block_addr <  image_end && image_end <= *block_addr + *block_len) {
-        uint32_t back_len  = *block_addr + *block_len - image_end;
-        if (back_len > front_len) {
-          *block_addr = image_end;
-          *block_len = back_len;
-        } else
-          *block_len = front_len;
+    uint64_t front_len = image_start - *block_addr;
+    if (*block_addr <= image_end && image_end < *block_addr + *block_len) {
+      uint64_t back_len = *block_addr + *block_len - image_end - 1;
+      if (back_len > front_len) {
+        *block_addr = image_end + 1;
+        *block_len = back_len;
       } else
         *block_len = front_len;
+    } else
+      *block_len = front_len;
+  } else {
+    if (*block_addr <= image_end && image_end < *block_addr + *block_len) {
+      *block_len -= image_end + 1 - *block_addr;
+      *block_addr = image_end + 1;
     }
-    if (*block_addr <  image_end && image_end <= *block_addr + *block_len) {
-      *block_len -= image_end - *block_addr;
-      *block_addr = image_end;
-    }
+  }
 }
 
 bool overlap_bender_binary(struct ph64 const * p)
@@ -51,13 +62,10 @@ bool overlap_bender_binary(struct ph64 const * p)
   uintptr_t image_start = (uintptr_t)&_image_start;
   uintptr_t image_end   = (uintptr_t)&_image_end;
 
-  if ((p->p_paddr <= image_start && image_start < p->p_paddr + p->p_memsz) ||
-      (p->p_paddr <  image_end && image_end <= p->p_paddr + p->p_memsz)) {
-    printf("Bender memory %lx+%lx overlaps with phdr %llx+%llx\n",
-           image_start, image_end, p->p_paddr, p->p_memsz);
-    return true;
-  }
-  return false;
+  if (!overlap(image_start, image_end, p))
+    return false;
+
+  printf("Bender memory %lx+%lx overlaps with phdr %llx+%llx\n",
+         image_start, image_end, p->p_paddr, p->p_memsz);
+  return true;
 }
-
-

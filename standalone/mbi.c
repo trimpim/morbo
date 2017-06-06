@@ -221,8 +221,8 @@ int check_reloc (struct ph64 const * p, uint32_t const binary, uint8_t ** var)
   for (unsigned i = 0; i < mbi->mods_count; i++) {
     uint32_t cmdline_len = modules[i].string ? strlen((char *)modules[i].string) : 0;
 
-    if (mod_overlap(modules[i].mod_start, modules[i].mod_end, p) ||
-        (modules[i].string && mod_overlap(modules[i].string, modules[i].string + cmdline_len, p))) {
+    if (overlap(modules[i].mod_start, modules[i].mod_end, p) ||
+        (modules[i].string && overlap(modules[i].string, modules[i].string + cmdline_len, p))) {
       printf("phdr %llx+%llx overlaps with module %lx-%lx %x+%x'%s' \n",
              p->p_paddr, p->p_memsz, modules[i].mod_start, modules[i].mod_end,
              modules[i].string, cmdline_len, modules[i].string);

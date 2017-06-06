@@ -147,7 +147,7 @@ int check_reloc (struct ph64 const * p, uint32_t const binary, uint8_t ** var)
 
     struct mbi2_module * module = *m;
 
-    if (mod_overlap(module->mod_start, module->mod_end, p))
+    if (overlap(module->mod_start, module->mod_end, p))
       return mod_relocate;
   }
 
