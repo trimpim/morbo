@@ -31,8 +31,8 @@ parse_cmdline(const char *cmdline)
 
     if (strcmp(token, "promisc") == 0)
       be_promisc = true;
-    if (strcmp(token, "norelocate") == 0)
-      phys_max_relocate = 0;
+    if (strcmp(token, "phys_max=256M") == 0)
+      phys_max_relocate = 256ULL * 1024 * 1024;
     if (strcmp(token, "vga") == 0)
       vga_init();
     if (strcmp(token, "serial_fallback") == 0)
