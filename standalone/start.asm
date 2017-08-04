@@ -18,8 +18,8 @@ _mbi2_s:                        ; mbi 2 header
         dd (_mbi2_e - _mbi2_s)                 ; size
         dd -(0xe85250d6 + (_mbi2_e - _mbi2_s)) ; checksum
                                 ; end tag
-        dd 0x0                  ; type
-        dd 0x0                  ; flags
+        dw 0x0                  ; type
+        dw 0x0                  ; flags
         dd 0x8                  ; size
 _mbi2_e:
 
