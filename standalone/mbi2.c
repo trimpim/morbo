@@ -26,6 +26,22 @@ static
 uint64_t find_mbi2_memory(void * multiboot, size_t const binary_size,
                           bool highest, uint64_t mem_below)
 {
+  struct mbi2_fb * fb = 0;
+
+  for (struct mbi2_tag *i = mbi2_first(multiboot); i; i = mbi2_next(i)) {
+    if (i->type != MBI2_TAG_FB)
+      continue;
+
+    fb = (struct mbi2_fb *) (i + 1);
+
+    printf("framebuffer at [%llx+%llx) %ux%u@%u\n", fb->addr,
+           fb->addr + fb->pitch * fb->height, fb->width, fb->height, fb->bpp);
+    if (fb->type != 1)
+      printf("warning - unknown framebuffer type\n");
+
+    break;
+  }
+
   uint64_t binary_start = 0;
 
   for (struct mbi2_tag *i = mbi2_first(multiboot); i; i = mbi2_next(i)) {
@@ -49,16 +65,20 @@ uint64_t find_mbi2_memory(void * multiboot, size_t const binary_size,
       uint64_t mem_size = m->len - (mem_start - m->addr);
 
       if (mem_start > mem_below)
-         continue;
+        continue;
 
       if (mem_start + mem_size > mem_below)
-         mem_size = mem_start + mem_size - mem_below;
+        mem_size = mem_start + mem_size - mem_below;
 
       /* exclude bender image */
       exclude_bender_binary(&mem_start, &mem_size);
+      /* exclude framebuffer */
+      if (fb && mem_size)
+        exclude_region(&mem_start, &mem_size, fb->addr,
+                       fb->addr + fb->pitch * fb->height - 1);
 
       if (!(m->type == MMAP_AVAIL && binary_size <= mem_size))
-         continue;
+        continue;
 
       if (mem_start > binary_start) {
         if (highest)

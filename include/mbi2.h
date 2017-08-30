@@ -26,20 +26,21 @@ enum mbi2_enum
     MBI2_TAG_CMDLINE = 1,
     MBI2_TAG_MODULE  = 3,
     MBI2_TAG_MEMORY  = 6,
+    MBI2_TAG_FB      = 8,
   };
 
 struct mbi2_tag
 {
   uint32_t type;
   uint32_t size;
-};
+} __attribute__((packed));
 
 struct mbi2_module
 {
   uint32_t mod_start;
   uint32_t mod_end;
   char     string[];
-};
+} __attribute__((packed));
 
 struct mbi2_memory
 {
@@ -47,7 +48,16 @@ struct mbi2_memory
   uint64_t len;
   uint32_t type;
   uint32_t reserved;
-};
+} __attribute__((packed));
+
+struct mbi2_fb {
+  uint64_t addr;
+  uint32_t pitch;
+  uint32_t width;
+  uint32_t height;
+  uint8_t  bpp;
+  uint8_t  type;
+} __attribute__((packed));
 
 static inline
 struct mbi2_tag * mbi2_first(void *multiboot)

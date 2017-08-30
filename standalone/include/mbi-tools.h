@@ -24,6 +24,8 @@
 #include <mbi.h>
 #include <elf.h>
 
+void exclude_region(uint64_t *block_addr, uint64_t *block_len,
+                    uintptr_t const image_start, uintptr_t const image_end);
 void exclude_bender_binary(uint64_t *block_addr, uint64_t *block_len);
 bool overlap_bender_binary(struct ph64 const * p);
 
