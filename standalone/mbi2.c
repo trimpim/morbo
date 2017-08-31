@@ -45,6 +45,11 @@ uint64_t find_mbi2_memory(void * multiboot, size_t const binary_size,
   uint64_t binary_start = 0;
 
   for (struct mbi2_tag *i = mbi2_first(multiboot); i; i = mbi2_next(i)) {
+    if (i->type == MBI2_TAG_MODULE) {
+      struct mbi2_module * module = (struct mbi2_module *)(i + 1);
+      printf("module %lx+%lx %s\n", module->mod_start, module->mod_end, module->string);
+    }
+
     if (i->type != MBI2_TAG_MEMORY)
       continue;
 
@@ -64,6 +69,8 @@ uint64_t find_mbi2_memory(void * multiboot, size_t const binary_size,
       uint64_t mem_start = (m->addr + 0xFFFULL) & ~0xFFFULL;
       uint64_t mem_size = m->len - (mem_start - m->addr);
 
+      printf("%u m %llx+%lx\n", m->type, m->addr, m->len);
+
       if (mem_start > mem_below)
         continue;
 
@@ -73,9 +80,16 @@ uint64_t find_mbi2_memory(void * multiboot, size_t const binary_size,
       /* exclude bender image */
       exclude_bender_binary(&mem_start, &mem_size);
       /* exclude framebuffer */
-      if (fb && mem_size)
+      if (fb && mem_size) {
+        uint64_t mem_start_b = mem_start;
+        uint64_t mem_size_b = mem_size;
+
         exclude_region(&mem_start, &mem_size, fb->addr,
                        fb->addr + fb->pitch * fb->height - 1);
+        if (mem_start_b != mem_start || mem_size_b != mem_size) {
+            printf("remove fb %llx+%llx -> %llx+%llx\n", mem_start_b, mem_size_b, mem_start, mem_size);
+        }
+      }
 
       if (!(m->type == MMAP_AVAIL && binary_size <= mem_size))
         continue;
@@ -87,10 +101,13 @@ uint64_t find_mbi2_memory(void * multiboot, size_t const binary_size,
           binary_start = mem_start;
       }
 
-      if (!highest)
+      if (!highest) {
+        printf("binary_start %llx+%lx A\n", binary_start, binary_size);
         return binary_start;
+      }
     }
   }
+  printf("binary_start %llx+%lx B\n", binary_start, binary_size);
   return binary_start;
 }
 
