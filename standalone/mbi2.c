@@ -68,7 +68,7 @@ uint64_t find_mbi2_memory(void * multiboot, size_t const binary_size,
         continue;
 
       if (mem_start + mem_size > mem_below)
-        mem_size = mem_start + mem_size - mem_below;
+        mem_size = mem_below - mem_start;
 
       /* exclude bender image */
       exclude_bender_binary(&mem_start, &mem_size);
