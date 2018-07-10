@@ -31,7 +31,12 @@ int start_module2(void *mbi2, bool uncompress, uint64_t phys_max);
 
 int load_elf(void const * mbi, uint32_t const binary, uint32_t const magic);
 
-int for_each_phdr(uint32_t const binary, uint8_t **, int (*fn)(struct ph64 const *, uint32_t const, uint8_t **));
+/* callback function invoked by for_each_phdr */
+typedef int (*phdr_callback)(struct ph64 const *, void *);
+/* Iterator for each phdr entry.
+   phdr_callback is invoked for each entry with a caller specific opaque
+   pointer */
+int for_each_phdr(uint32_t const binary, void * opaque, phdr_callback);
 
 /* Definitions taken from elf.h. Copyright follows: */
 /* This file defines standard ELF types, structures, and macros.

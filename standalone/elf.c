@@ -56,8 +56,7 @@ gen_elf_segment(uint8_t **code, uintptr_t target, void *src, size_t len,
   byte_out(code, 0xAA);         /* STOSB */
 }
 
-int for_each_phdr(uint32_t const binary, uint8_t ** var,
-                  int (*fn)(struct ph64 const *, uint32_t const, uint8_t **))
+int for_each_phdr(uint32_t const binary, void * opaque, phdr_callback fn)
 {
   // check elf header
   struct eh *elf = (struct eh *) binary;
@@ -80,7 +79,7 @@ int for_each_phdr(uint32_t const binary, uint8_t ** var,
         .p_memsz  = ph->p_memsz,       \
         .p_align  = ph->p_align        \
       };                               \
-      int e = fn(&p_tmp, binary, var); \
+      int e = fn(&p_tmp, opaque);      \
       if (e)                           \
         return e;                      \
     }                                  \
@@ -99,13 +98,21 @@ int for_each_phdr(uint32_t const binary, uint8_t ** var,
   return 0;
 }
 
+struct segment_info {
+  uint8_t **jump_code;
+  uint32_t binary;
+};
+
 static int
-elf_phdr(struct ph64 const *ph, uint32_t const binary, uint8_t ** code)
+elf_phdr(struct ph64 const *ph, void * code)
 {
   if (ph->p_type != ELF_PT_LOAD)
     return 0;
 
-  gen_elf_segment(code, ph->p_paddr, (void *)(uintptr_t)(binary+ph->p_offset),
+  struct segment_info * info = (struct segment_info *)code;
+
+  gen_elf_segment(info->jump_code, ph->p_paddr,
+                  (void *)(uintptr_t)(info->binary+ph->p_offset),
                   ph->p_filesz, ph->p_memsz - ph->p_filesz);
 
   return 0;
@@ -115,8 +122,9 @@ int
 load_elf(void const * mbi, uint32_t const binary, uint32_t const magic)
 {
   uint8_t *code = (uint8_t *)0x7C00;
+  struct segment_info info = { .jump_code = &code, .binary = binary };
 
-  int error = for_each_phdr(binary, &code, elf_phdr);
+  int error = for_each_phdr(binary, &info, elf_phdr);
   if (error)
     return error;
 
