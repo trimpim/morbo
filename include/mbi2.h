@@ -77,7 +77,6 @@ struct mbi2_tag * mbi2_next(struct mbi2_tag *c)
 static inline
 uint32_t mbi2_size(void *multiboot)
 {
-  struct mbi2_tag * header = (struct mbi2_tag *)multiboot;
-  return header->size;
+  return *(uint32_t *)multiboot;
 }
 /* EOF */
