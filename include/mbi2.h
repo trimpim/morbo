@@ -27,6 +27,8 @@ enum mbi2_enum
     MBI2_TAG_MODULE  = 3,
     MBI2_TAG_MEMORY  = 6,
     MBI2_TAG_FB      = 8,
+    MBI2_TAG_RSDP_V1 = 14,
+    MBI2_TAG_RSDP_V2 = 15,
   };
 
 struct mbi2_tag

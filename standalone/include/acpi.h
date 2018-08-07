@@ -6,6 +6,8 @@
  * Copyright (C) 2009-2012, Bernhard Kauer <kauer@os.inf.tu-dresden.de>
  * Economic rights: Technische Universitaet Dresden (Germany)
  *
+ * Copyright (C) 2018, Alexander Boettcher <alexander.boettcher@genode-labs.com>
+ *
  * This file is part of Morbo.
  *
  * Morbo is free software: you can redistribute it and/or modify it
@@ -94,6 +96,17 @@ struct dmar {
   struct dmar_entry first_entry;
 };
 
+
+enum { APIC_MADT_LAPIC_TYPE = 0 };
+struct apic_madt
+{
+	uint8_t type;
+	uint8_t length;
+	uint8_t id1;
+	uint8_t id2;
+	uint32_t flags;
+} __attribute__((packed));
+
 char acpi_checksum(const char *table, size_t count);
 void acpi_fix_checksum(struct acpi_table *tab);
 
@@ -111,4 +124,57 @@ typedef void *(*memory_alloc_t)(size_t len, unsigned align);
 struct acpi_table *acpi_dup_table(struct acpi_table *rsdt, const char signature[4],
 				  memory_alloc_t alloc);
 
+static inline
+void for_each_rsdt_entry(struct acpi_table *rsdt, void (*fn)(uint64_t))
+{
+	if (rsdt->signature[0] != 'R' || rsdt->signature[1] != 'S' ||
+	    rsdt->signature[2] != 'D' || rsdt->signature[3] != 'T')
+		return;
+
+	typedef uint32_t entry_t;
+
+	unsigned const table_size  = rsdt->size;
+	unsigned const entry_count = (table_size - sizeof(*rsdt)) / sizeof(entry_t);
+
+	entry_t * entries = (entry_t *)(rsdt + 1);
+	for (unsigned i = 0; i < entry_count; i++)
+		fn(entries[i]);
+}
+
+static inline
+void for_each_xsdt_entry(struct acpi_table *xsdt, void (*fn)(uint64_t))
+{
+	if (xsdt->signature[0] != 'X' || xsdt->signature[1] != 'S' ||
+	    xsdt->signature[2] != 'D' || xsdt->signature[3] != 'T')
+		return;
+
+	typedef uint64_t entry_t;
+
+	unsigned const table_size  = xsdt->size;
+	unsigned const entry_count = (table_size - sizeof(*xsdt)) / sizeof(entry_t);
+
+	entry_t * entries = (entry_t *)(xsdt + 1);
+	for (unsigned i = 0; i < entry_count; i++)
+		fn(entries[i]);
+}
+
+static inline
+struct apic_madt const *acpi_madt_next(struct apic_madt const * const c)
+{
+	return (struct apic_madt *)((uint8_t *)c + c->length);
+}
+
+static inline
+void for_each_apic_struct(struct acpi_table *apic_madt, void (*fn)(struct apic_madt const *))
+{
+	if (apic_madt->signature[0] != 'A' || apic_madt->signature[1] != 'P' ||
+	    apic_madt->signature[2] != 'I' || apic_madt->signature[3] != 'C')
+		return;
+
+	struct apic_madt const * const first = (struct apic_madt *)(&apic_madt->crev + 3);
+	struct apic_madt const * const last  = (struct apic_madt *)((uint8_t *)(apic_madt->signature) + apic_madt->size);
+
+	for (struct apic_madt const * e = first; e < last ; e = acpi_madt_next(e))
+		fn(e);
+}
 /* EOF */

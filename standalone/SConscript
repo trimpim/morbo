@@ -1,12 +1,14 @@
 # -*- Mode: Python -*-
 
+smp_ap_code = "AP_CODE=0x1000"
+
 freestanding_env = Environment()
 
 freestanding_env['CFLAGS']  = "-Os -minline-all-stringops -m32 -march=pentium -mtune=core2 -pipe -std=gnu99 -ffreestanding -nostdlib -Wno-multichar -Wall"
 freestanding_env['CFLAGS'] += " -ffunction-sections -fomit-frame-pointer -mregparm=3 "
 freestanding_env['LINKFLAGS'] = "-m elf_i386 -gc-sections -N"
 freestanding_env['LINK'] = "ld"
-freestanding_env['ASFLAGS'] = "-O5 -f elf32"
+freestanding_env['ASFLAGS'] = "-O5 -f elf32 -D" + smp_ap_code
 
 def CheckCommand(context, cmd):
        context.Message('Checking for %s command... ' % cmd)
@@ -33,10 +35,6 @@ if not (conf.CheckCHeader("stdint.h") and
 freestanding_env = conf.Finish()
 
 fenv = freestanding_env.Clone()
-
-fenv['CPPPATH'] = ["../include", "include/"]
-fenv['LINKFLAGS'] += " -T " + File('morbo.ld').srcnode().path
-fenv['LIBPATH'] = ['.']
 
 stand = fenv.StaticLibrary('stand',
                            [ 'elf.c',
@@ -76,6 +74,14 @@ tinf = fenv.StaticLibrary('tinf',
                             'crc32.c',
                             ])
 
+fenv['CPPPATH'] = ["../include", "include/"]
+fenv['LIBPATH'] = ['.']
+
+fenv_microcode = fenv.Clone()
+
+fenv['LINKFLAGS'] += " -T " + File('morbo.ld').srcnode().path
+fenv_microcode['LINKFLAGS'] += " -T " + File('microcode.ld').srcnode().path + " -defsym=" + smp_ap_code
+
 # Execute git describe somewhere where our code is. This is useful,
 # when this SConscript is used by third-party scons build systems
 # directly.
@@ -83,6 +89,7 @@ AlwaysBuild(Command('version.inc', ['include/version.h'], """( cd `dirname $SOUR
 
 def DoInstall(prog):
     Depends(prog, 'morbo.ld')
+    Depends(prog, 'microcode.ld')
     Install('../tftp', prog)
 
 # Morbo
@@ -128,4 +135,10 @@ DoInstall(fenv.Program('basicperf',
                        [ 'basicperf.c' ],
                        LIBS=['stand']))
 
+# Microcode
+
+DoInstall(fenv_microcode.Program('microcode',
+                                 [ 'microcode.c',
+                                   'acpi.c' ],
+                                 LIBS=['stand', 'tinf']))
 # EOF
