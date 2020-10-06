@@ -2,13 +2,17 @@
 
 smp_ap_code = "AP_CODE=0x1000"
 
+c_cc_flags  = "-Os -minline-all-stringops -m32 -march=pentium -mtune=core2"
+c_cc_flags += " -pipe -ffreestanding -nostdlib -Wno-multichar -Wall -Werror"
+c_cc_flags += " -ffunction-sections -fomit-frame-pointer -mregparm=3 -D" + smp_ap_code
+
 freestanding_env = Environment()
 
-freestanding_env['CFLAGS']  = "-Os -minline-all-stringops -m32 -march=pentium -mtune=core2 -pipe -std=gnu99 -ffreestanding -nostdlib -Wno-multichar -Wall -Werror"
-freestanding_env['CFLAGS'] += " -ffunction-sections -fomit-frame-pointer -mregparm=3 "
+freestanding_env['CCFLAGS']   = c_cc_flags
+freestanding_env['CFLAGS']    = c_cc_flags
 freestanding_env['LINKFLAGS'] = "-m elf_i386 -gc-sections -N"
-freestanding_env['LINK'] = "ld"
-freestanding_env['ASFLAGS'] = "-O5 -f elf32 -D" + smp_ap_code
+freestanding_env['LINK']      = "ld"
+freestanding_env['ASFLAGS']   = "-O5 -f elf32 -D" + smp_ap_code
 
 def CheckCommand(context, cmd):
        context.Message('Checking for %s command... ' % cmd)
@@ -35,6 +39,11 @@ if not (conf.CheckCHeader("stdint.h") and
 freestanding_env = conf.Finish()
 
 fenv = freestanding_env.Clone()
+
+fenv16 = Environment()
+fenv16['CCFLAGS']  = "-Os -minline-all-stringops -m16 -march=pentium -mtune=core2 -pipe -ffreestanding -nostdlib -Wno-multichar -Wall -Werror"
+fenv16['CCFLAGS'] += " -ffunction-sections -fomit-frame-pointer -mregparm=3 "
+fenv16['CPPPATH'] = ["../include", "include/"]
 
 stand = fenv.StaticLibrary('stand',
                            [ 'elf.c',
@@ -76,6 +85,8 @@ tinf = fenv.StaticLibrary('tinf',
 
 microcode = fenv.StaticLibrary('microcode', [ 'microcode.c', 'acpi.c' ])
 
+plugins = fenv16.StaticLibrary('plugins', [ 'intel_hwp_16.cc' ])
+
 fenv['CPPPATH'] = ["../include", "include/"]
 fenv['LIBPATH'] = ['.']
 
@@ -100,7 +111,7 @@ DoInstall(fenv.Program('morbo',
                        [ 'crc16.c',
                          'morbo.c',
                          'ohci.c' ],
-                       LIBS=['stand', 'tinf']))
+                       LIBS=['stand', 'tinf', 'plugins']))
 
 # Zapp
 
@@ -108,31 +119,31 @@ DoInstall(fenv.Program('zapp',
                        [ 'acpi.c',
                          'zapp.c',
                          ],
-                       LIBS=['stand', 'tinf']))
+                       LIBS=['stand', 'tinf', 'plugins']))
 
 # Bender
 
-DoInstall(fenv.Program('bender', [ 'bender.c', 'smp.c' ],
-                       LIBS=['stand', 'tinf', 'microcode']))
+DoInstall(fenv.Program('bender', [ 'bender.c', 'smp.c', 'intel_hwp.cc' ],
+                       LIBS=['stand', 'tinf', 'microcode', 'plugins']))
 
 # Unzip
 
 DoInstall(fenv.Program('unzip',
                        [ 'unzip.c',
                          ],
-                       LIBS=['stand', 'tinf']))
+                       LIBS=['stand', 'tinf', 'plugins']))
 
 # Farnsworth
 
 DoInstall(fenv.Program('farnsworth',
                        [ 'farnsworth.c',
                          ],
-                       LIBS=['stand', 'tinf']))
+                       LIBS=['stand', 'tinf', 'plugins']))
 
 # Performance tests
 
 DoInstall(fenv.Program('basicperf',
                        [ 'basicperf.c' ],
-                       LIBS=['stand']))
+                       LIBS=['stand', 'plugins']))
 
 # EOF

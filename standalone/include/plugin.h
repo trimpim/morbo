@@ -17,5 +17,21 @@
 
 #pragma once
 
+int smp_install_code();
 int smp_main(unsigned const magic, void *multiboot);
 int microcode_main(unsigned const magic, void *multiboot);
+int intel_hwp_main(unsigned const magic, void *multiboot);
+
+extern unsigned _ap;
+extern unsigned _ap_code;
+extern unsigned _ap_plugin;
+
+enum PLUGIN { PLUGIN_MICROCODE = 1, PLUGIN_INTEL_HWP = 2 };
+
+void flag_plugin_for_aps(enum PLUGIN const flag)
+{
+	unsigned const offset = (unsigned)&_ap_plugin - (unsigned)&_ap;
+	unsigned * const plugins = (unsigned *)(_ap_code + offset);
+
+	*plugins = *plugins | flag;
+}

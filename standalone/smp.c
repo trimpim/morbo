@@ -27,6 +27,7 @@ static unsigned hyperthread_per_cpu = 0;
 static unsigned cpus_wait_for       = 0;
 
 extern unsigned _ap;
+extern unsigned _ap_end;
 extern unsigned _ap_data;
 extern unsigned _ap_code;
 
@@ -216,5 +217,12 @@ int smp_main(uint32_t const magic, void *multiboot)
 
 	wake_on_thread_per_core(rsdp);
 
+	return 0;
+}
+
+int smp_install_code()
+{
+	unsigned const ap_len = (unsigned)&_ap_end - (unsigned)&_ap;
+	memcpy((void *)AP_CODE, &_ap, ap_len);
 	return 0;
 }
