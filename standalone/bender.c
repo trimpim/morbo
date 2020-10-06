@@ -17,6 +17,7 @@ static uint64_t phys_max_relocate = 1ULL << 31; /* below 2G */
 static bool be_promisc       = false;
 static bool serial_fallback  = false;
 static bool option_microcode = false;
+static bool option_intel_hwp = false;
 
 void
 parse_cmdline(const char *cmdline)
@@ -34,14 +35,21 @@ parse_cmdline(const char *cmdline)
 
     if (strcmp(token, "promisc") == 0)
       be_promisc = true;
+    else
     if (strcmp(token, "phys_max=256M") == 0)
       phys_max_relocate = 256ULL * 1024 * 1024;
+    else
     if (strcmp(token, "vga") == 0)
       vga_init();
+    else
     if (strcmp(token, "serial_fallback") == 0)
       serial_fallback = true;
+    else
     if (strcmp(token, "microcode") == 0)
       option_microcode = true;
+    else
+    if (strcmp(token, "intel_hwp") == 0)
+      option_intel_hwp = true;
   }
 }
 
@@ -122,9 +130,18 @@ main(uint32_t magic, void *multiboot)
 
   printf("Bender: Hello World.\n");
 
-  if (option_microcode) {
-      microcode_main(magic, multiboot);
-      smp_main(magic, multiboot);
+  if (option_microcode) flag_plugin_for_aps(PLUGIN_MICROCODE);
+  if (option_intel_hwp) flag_plugin_for_aps(PLUGIN_INTEL_HWP);
+
+  if (option_microcode) microcode_main(magic, multiboot);
+  if (option_intel_hwp) intel_hwp_main(magic, multiboot);
+
+  if (option_microcode || option_intel_hwp) {
+     smp_main(magic, multiboot);
+     /*
+      * When we return here, one thread per processor core woke up,
+      * executed all flagged plugins and went to halt finally.
+      */
   }
 
   if (magic == MBI_MAGIC)
