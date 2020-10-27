@@ -74,13 +74,15 @@ tinf = fenv.StaticLibrary('tinf',
                             'crc32.c',
                             ])
 
+microcode = fenv.StaticLibrary('microcode', [ 'microcode.c', 'acpi.c' ])
+
 fenv['CPPPATH'] = ["../include", "include/"]
 fenv['LIBPATH'] = ['.']
 
-fenv_microcode = fenv.Clone()
+fenv_bender = fenv.Clone()
 
 fenv['LINKFLAGS'] += " -T " + File('morbo.ld').srcnode().path
-fenv_microcode['LINKFLAGS'] += " -T " + File('microcode.ld').srcnode().path + " -defsym=" + smp_ap_code
+fenv_bender['LINKFLAGS'] += " -T " + File('bender.ld').srcnode().path + " -defsym=" + smp_ap_code
 
 # Execute git describe somewhere where our code is. This is useful,
 # when this SConscript is used by third-party scons build systems
@@ -89,7 +91,7 @@ AlwaysBuild(Command('version.inc', ['include/version.h'], """( cd `dirname $SOUR
 
 def DoInstall(prog):
     Depends(prog, 'morbo.ld')
-    Depends(prog, 'microcode.ld')
+    Depends(prog, 'bender.ld')
     Install('../tftp', prog)
 
 # Morbo
@@ -113,7 +115,7 @@ DoInstall(fenv.Program('zapp',
 DoInstall(fenv.Program('bender',
                        [ 'bender.c',
                          ],
-                       LIBS=['stand', 'tinf']))
+                       LIBS=['stand', 'tinf', 'microcode']))
 
 # Unzip
 
@@ -135,10 +137,4 @@ DoInstall(fenv.Program('basicperf',
                        [ 'basicperf.c' ],
                        LIBS=['stand']))
 
-# Microcode
-
-DoInstall(fenv_microcode.Program('microcode',
-                                 [ 'microcode.c',
-                                   'acpi.c' ],
-                                 LIBS=['stand', 'tinf']))
 # EOF

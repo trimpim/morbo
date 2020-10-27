@@ -2,7 +2,7 @@
 /*
  * Intel microcode update support
  *
- * Copyright (C) 2018, Alexander Boettcher <alexander.boettcher@genode-labs.com>
+ * Copyright (C) 2018-2020, Alexander Boettcher <alexander.boettcher@genode-labs.com>
  *
  * This file is part of Morbo.
  *
@@ -16,16 +16,12 @@
  * General Public License version 2 for more details.
  */
 
-#include <bda.h>
-#include <elf.h>
 #include <mbi.h>
 #include <mbi2.h>
-#include <serial.h>
 #include <util.h>
 #include <cpuid.h>
 #include <acpi.h>
 
-static uint64_t phys_max_relocate   = 1ULL << 31; /* below 2G */
 static unsigned cpus_detected       = 0;
 static unsigned hyperthread_per_cpu = 0;
 static unsigned cpus_wait_for       = 0;
@@ -81,11 +77,6 @@ struct microcode
   uint32_t reserved[3];
   uint8_t  data[];
 } __attribute__((packed));
-
-static void inline cpuid(unsigned *eax, unsigned *ebx, unsigned *ecx, unsigned *edx)
-{
-  asm volatile ("cpuid" : "+a" (*eax), "+d" (*edx), "+b" (*ebx), "+c"(*ecx) :: "memory");
-}
 
 uint64_t signature_info(unsigned *eax)
 {
@@ -300,26 +291,7 @@ void apply_microcode(struct microcode const * const microcode,
     asm volatile("pause":::"memory");
 }
 
-static void parse_cmdline(const char *cmdline)
-{
-  char *last_ptr = NULL;
-  char cmdline_buf[256];
-  char *token;
-  unsigned i;
-
-  strncpy(cmdline_buf, cmdline, sizeof(cmdline_buf));
-
-  for (token = strtok_r(cmdline_buf, " ", &last_ptr), i = 0;
-       token != NULL;
-       token = strtok_r(NULL, " ", &last_ptr), i++) {
-
-    if (strcmp(token, "serial") == 0)
-      if (serial_ports(get_bios_data_area()))
-        serial_init();
-  }
-}
-
-int main(uint32_t const magic, void *multiboot)
+int microcode_main(uint32_t const magic, void *multiboot)
 {
   char   const mc_rom []       = "micro.code";
   size_t const mc_rom_size     = sizeof(mc_rom) - 1;
@@ -329,9 +301,6 @@ int main(uint32_t const magic, void *multiboot)
   if (magic == MBI_MAGIC) {
     struct mbi * const mbi = (struct mbi *)multiboot;
     struct module *m  = (struct module *) mbi->mods_addr;
-
-    if ((mbi->flags & MBI_FLAG_CMDLINE) != 0)
-      parse_cmdline((const char *)mbi->cmdline);
 
     for (unsigned i=0; i < mbi->mods_count; i++) {
       struct module * module = (struct module *)(m + i);
@@ -366,11 +335,6 @@ int main(uint32_t const magic, void *multiboot)
     for (struct mbi2_tag *i = mbi2_first(multiboot); i; i = mbi2_next(i)) {
       struct mbi2_module * module = (struct mbi2_module *)(i + 1);
 
-      if (i->type == MBI2_TAG_CMDLINE) {
-        parse_cmdline((const char *)(i + 1));
-        continue;
-      }
-
       if (i->type == MBI2_TAG_RSDP_V1 || i->type == MBI2_TAG_RSDP_V2)
         /* got a ACPI RSDP pointer */
         rsdp = (struct rsdp *)module;
@@ -394,8 +358,5 @@ int main(uint32_t const magic, void *multiboot)
 
   apply_microcode(microcode, rsdp);
 
-  if (magic == MBI_MAGIC)
-    return start_module(multiboot, true, phys_max_relocate);
-  else
-    return start_module2(multiboot, true, phys_max_relocate);
+  return 0;
 }

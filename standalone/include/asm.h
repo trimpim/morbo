@@ -101,6 +101,12 @@ bsf(uint32_t value)
   return res;
 }
 
+static void inline
+cpuid(unsigned *eax, unsigned *ebx, unsigned *ecx, unsigned *edx)
+{
+  asm volatile ("cpuid" : "+a" (*eax), "+d" (*edx), "+b" (*ebx), "+c"(*ecx) :: "memory");
+}
+
 static inline void
 invlpg(void *p)
 {
