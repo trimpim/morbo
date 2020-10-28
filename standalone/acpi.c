@@ -58,7 +58,7 @@ struct acpi_table **acpi_get_table_ptr(struct acpi_table *rsdt, const char signa
     struct acpi_table *entry = *(struct acpi_table **)cur;
     if (acpi_checksum((const char *)entry, entry->size) != 0)
       continue;
-    if (memcmp(signature, entry->signature, sizeof(signature)) == 0)
+    if (memcmp(signature, entry->signature, 4) == 0)
       return (struct acpi_table **)cur;
   }
 
