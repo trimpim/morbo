@@ -17,4 +17,5 @@
 
 #pragma once
 
+int smp_main(unsigned const magic, void *multiboot);
 int microcode_main(unsigned const magic, void *multiboot);

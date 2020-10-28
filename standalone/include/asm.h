@@ -131,6 +131,24 @@ memory_barrier(void)
   asm volatile ("" ::: "memory");
 }
 
+static inline void
+msr_write(unsigned msr, uint64_t value)
+{
+  uint32_t const low = value, high = value >> 32;
+
+  asm volatile ("wrmsr" :: "a" (low), "d" (high), "c" (msr));
+}
+
+static inline uint64_t
+msr_read(unsigned msr)
+{
+  uint32_t high, low;
+
+  asm volatile ("rdmsr" : "=d" (high), "=a" (low) : "c" (msr));
+
+  return ((0ULL + high) << 32) | low;
+}
+
 #define REGISTER_SETTER(reg)                                    \
   static inline void set_ ## reg (uint32_t v)                   \
   {                                                             \

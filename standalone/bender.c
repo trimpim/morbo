@@ -122,8 +122,10 @@ main(uint32_t magic, void *multiboot)
 
   printf("Bender: Hello World.\n");
 
-  if (option_microcode)
+  if (option_microcode) {
       microcode_main(magic, multiboot);
+      smp_main(magic, multiboot);
+  }
 
   if (magic == MBI_MAGIC)
       return start_module((struct mbi *)multiboot, false, phys_max_relocate);

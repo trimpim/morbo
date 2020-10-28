@@ -112,9 +112,7 @@ DoInstall(fenv.Program('zapp',
 
 # Bender
 
-DoInstall(fenv.Program('bender',
-                       [ 'bender.c',
-                         ],
+DoInstall(fenv.Program('bender', [ 'bender.c', 'smp.c' ],
                        LIBS=['stand', 'tinf', 'microcode']))
 
 # Unzip
