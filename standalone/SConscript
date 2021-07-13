@@ -42,7 +42,7 @@ fenv = freestanding_env.Clone()
 
 fenv16 = Environment()
 fenv16['CCFLAGS']  = "-Os -minline-all-stringops -m16 -march=pentium -mtune=core2 -pipe -ffreestanding -nostdlib -Wno-multichar -Wall -Werror"
-fenv16['CCFLAGS'] += " -ffunction-sections -fomit-frame-pointer -fno-stack-protector -mregparm=3 "
+fenv16['CCFLAGS'] += " -ffunction-sections -fomit-frame-pointer -fno-stack-protector -mregparm=3 -fno-pic"
 fenv16['CPPPATH'] = ["../include", "include/"]
 
 stand = fenv.StaticLibrary('stand',
