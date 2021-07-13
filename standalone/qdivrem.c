@@ -367,4 +367,16 @@ __udivdi3(a, b)
   return (__qdivrem(a, b, (u_quad_t *)0));
 }
 
+/*
+￼ * Implementation of 64-bit unsigned division/modulo for 32-bit machines.
+￼ */
+uint64_t
+__udivmoddi4(uint64_t n, uint64_t d, uint64_t *r)
+{
+  uint64_t q = __udivdi3(n, d);
+  if (r)
+    *r = n - d * q;
+  return (q);
+}
+
 /* EOF */

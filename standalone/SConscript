@@ -3,8 +3,8 @@
 smp_ap_code = "AP_CODE=0x1000"
 
 c_cc_flags  = "-Os -minline-all-stringops -m32 -march=pentium -mtune=core2"
-c_cc_flags += " -pipe -ffreestanding -nostdlib -Wno-multichar -Wall -Werror"
-c_cc_flags += " -ffunction-sections -fomit-frame-pointer -mregparm=3 -D" + smp_ap_code
+c_cc_flags += " -pipe -ffreestanding -nostdlib -Wno-multichar -Wall -Werror -Wno-address-of-packed-member"
+c_cc_flags += " -ffunction-sections -fomit-frame-pointer -fno-stack-protector -mregparm=3 -D" + smp_ap_code
 
 freestanding_env = Environment()
 
@@ -42,7 +42,7 @@ fenv = freestanding_env.Clone()
 
 fenv16 = Environment()
 fenv16['CCFLAGS']  = "-Os -minline-all-stringops -m16 -march=pentium -mtune=core2 -pipe -ffreestanding -nostdlib -Wno-multichar -Wall -Werror"
-fenv16['CCFLAGS'] += " -ffunction-sections -fomit-frame-pointer -mregparm=3 "
+fenv16['CCFLAGS'] += " -ffunction-sections -fomit-frame-pointer -fno-stack-protector -mregparm=3 "
 fenv16['CPPPATH'] = ["../include", "include/"]
 
 stand = fenv.StaticLibrary('stand',

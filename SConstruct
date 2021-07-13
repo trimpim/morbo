@@ -6,8 +6,8 @@ fw_env = Environment()
 
 fw_env['CPPPATH'] = ["#include/"]
 fw_env['CCFLAGS'] = "-Os -march=native -pipe -g "
-fw_env['CXXFLAGS'] = "-std=c++0x"
-fw_env['CFLAGS'] = "-std=c99 "
+fw_env['CXXFLAGS'] = "-std=c++0x -fno-stack-protector"
+fw_env['CFLAGS'] = "-std=c99 -fno-stack-protector"
 
 conf = Configure(fw_env, custom_tests = {'CheckPKGConfig' : morboutils.CheckPKGConfig,
                                          'CheckPKG'       : morboutils.CheckPKG })
