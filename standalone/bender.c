@@ -118,8 +118,11 @@ main(uint32_t magic, void *multiboot)
   }
 
   /* If no PCI serial card was found and serial fallback is set, use 3f8 (qemu) */
-  if (!serial_ctrl.cfg_address && !iobase && !serial_ports(get_bios_data_area()) &&
-      serial_fallback)
+// for the UP Xtreme the detection of serial ports detects the wrong
+// port. for the moment we force set it to the value of COM1 which we configure
+// in BIOS.
+//  if (!serial_ctrl.cfg_address && !iobase && !serial_ports(get_bios_data_area()) &&
+//      serial_fallback)
   {
       *com0_port      = 0x3f8;
       *equipment_word = (*equipment_word & ~(0xF << 9)) | (1 << 9); /* One COM port available */
