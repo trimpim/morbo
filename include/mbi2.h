@@ -21,14 +21,16 @@
 
 enum mbi2_enum
   {
-    MBI2_MAGIC       = 0x36d76289,
-    MBI2_TAG_END     = 0,
-    MBI2_TAG_CMDLINE = 1,
-    MBI2_TAG_MODULE  = 3,
-    MBI2_TAG_MEMORY  = 6,
-    MBI2_TAG_FB      = 8,
-    MBI2_TAG_RSDP_V1 = 14,
-    MBI2_TAG_RSDP_V2 = 15,
+    MBI2_MAGIC            = 0x36d76289,
+    MBI2_TAG_END          = 0,
+    MBI2_TAG_CMDLINE      = 1,
+    MBI2_TAG_MODULE       = 3,
+    MBI2_TAG_MEMORY       = 6,
+    MBI2_TAG_FB           = 8,
+    MBI2_TAG_RSDP_V1      = 14,
+    MBI2_TAG_RSDP_V2      = 15,
+    MBI2_TAG_EFI_IMAGE_32 = 19,
+    MBI2_TAG_EFI_IMAGE_64 = 20,
   };
 
 struct mbi2_tag

@@ -53,46 +53,21 @@ parse_cmdline(const char *cmdline)
   }
 }
 
-int
-main(uint32_t magic, void *multiboot)
+static void uart_init(bool const efi_boot)
 {
-  if (magic == MBI_MAGIC) {
-    struct mbi * mbi = (struct mbi *)multiboot;
-    if ((mbi->flags & MBI_FLAG_CMDLINE) != 0)
-      parse_cmdline((const char *)mbi->cmdline);
-  } else
-  if (magic == MBI2_MAGIC) {
-    for (struct mbi2_tag *i = mbi2_first(multiboot); i; i = mbi2_next(i)) {
-      if (i->type != MBI2_TAG_CMDLINE)
-        continue;
-
-      parse_cmdline((const char *)(i + 1));
-      break;
-    }
-  } else {
-    printf("Not loaded by Multiboot-compliant loader. Bye.\n");
-    return 1;
-  }
-
-  printf("\nBender %s\n", version_str);
-  printf("Blame Julian Stecklina <jsteckli@os.inf.tu-dresden.de> for bugs.\n\n");
+  struct pci_device serial_ctrl = { 0, 0 };
 
   printf("Looking for serial controllers on the PCI bus...\n");
 
-  struct pci_device serial_ctrl = { 0, 0 };
-
-  printf("Promisc is %s.\n", be_promisc ? "on" : "off");
   if (pci_find_device_by_class(PCI_CLASS_SIMPLE_COMM,
-			       be_promisc ? PCI_SUBCLASS_ANY : PCI_SUBCLASS_SERIAL_CTRL,
-			       &serial_ctrl)) {
+                               be_promisc ? PCI_SUBCLASS_ANY : PCI_SUBCLASS_SERIAL_CTRL,
+                               &serial_ctrl)) {
     printf("  found at %x.\n", serial_ctrl.cfg_address);
   } else {
     printf("  none found.\n");
   }
 
-  uint16_t iobase          = 0;
-  uint16_t *com0_port      = (uint16_t *)(get_bios_data_area());
-  uint16_t *equipment_word = &get_bios_data_area()->equipment;
+  uint16_t iobase = 0;
 
   if (serial_ctrl.cfg_address) {
     for (unsigned bar_no = 0; bar_no < 6; bar_no++) {
@@ -108,25 +83,71 @@ main(uint32_t magic, void *multiboot)
     if (!(command & PCI_CMD_IO))
       pci_cfg_write_uint8(&serial_ctrl, PCI_CFG_CMD, command | PCI_CMD_IO);
 
-    if (iobase != 0) {
-      printf("Patching BDA with I/O port 0x%x.\n", iobase);
-      *com0_port      = iobase;
-      *equipment_word = (*equipment_word & ~(0xF << 9)) | (1 << 9); /* One COM port available */
-    } else {
-      printf("I/O ports for controller not found.\n");
+  }
+
+  /* no pci card and non efi boot */
+  if (!iobase && !efi_boot) {
+    if (serial_ports(get_bios_data_area()))
+       iobase = get_bios_data_area()->com_port[0];
+  }
+
+  /* no pci card and serial_fallback */
+  if (!iobase && serial_fallback) {
+    if (efi_boot)
+      iobase = 0x3f8;
+
+    if (!efi_boot && !serial_ports(get_bios_data_area()))
+      iobase = 0x3f8;
+  }
+
+  if (iobase) {
+    serial_init(iobase);
+    printf("\nBender %s\n", version_str);
+  }
+
+  /* BDA patching - UEFI case checks missing XXX */
+  if (iobase) {
+    printf("Patching BDA with I/O port 0x%x.\n", iobase);
+
+    /* In UEFI case this memory may be occupied by something else
+     * - several checks are missing here to avoid potential corruption XXX
+     */
+    uint16_t *com0_port      = (uint16_t *)(get_bios_data_area());
+    uint16_t *equipment_word = &get_bios_data_area()->equipment;
+
+    *com0_port      = iobase;
+    *equipment_word = (*equipment_word & ~(0xF << 9)) | (1 << 9); /* One COM port available */
+  }
+}
+
+int
+main(uint32_t magic, void *multiboot)
+{
+  bool efi_boot = false;
+
+  if (magic == MBI_MAGIC) {
+    struct mbi * mbi = (struct mbi *)multiboot;
+    if ((mbi->flags & MBI_FLAG_CMDLINE) != 0)
+      parse_cmdline((const char *)mbi->cmdline);
+  } else
+  if (magic == MBI2_MAGIC) {
+    for (struct mbi2_tag *i = mbi2_first(multiboot); i; i = mbi2_next(i)) {
+      switch (i->type) {
+        case MBI2_TAG_CMDLINE:
+          parse_cmdline((const char *)(i + 1));
+          break;
+        case MBI2_TAG_EFI_IMAGE_32:
+        case MBI2_TAG_EFI_IMAGE_64:
+          efi_boot = true;
+          break;
+      }
     }
+  } else {
+    printf("Not loaded by Multiboot-compliant loader. Bye.\n");
+    return 1;
   }
 
-  /* If no PCI serial card was found and serial fallback is set, use 3f8 (qemu) */
-  if (!serial_ctrl.cfg_address && !iobase && !serial_ports(get_bios_data_area()) &&
-      serial_fallback)
-  {
-      *com0_port      = 0x3f8;
-      *equipment_word = (*equipment_word & ~(0xF << 9)) | (1 << 9); /* One COM port available */
-  }
-
-  if (serial_ports(get_bios_data_area()))
-    serial_init_bda();
+  uart_init(efi_boot);
 
   printf("Bender: Hello World.\n");
 
