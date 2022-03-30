@@ -19,5 +19,6 @@
 
 #pragma once
 
-void serial_init(void);
+void serial_init_bda(void);
 void serial_send(int c);
+void serial_init(unsigned short ioport);

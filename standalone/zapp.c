@@ -103,7 +103,7 @@ add_rmrr_entry(struct dmar *newdmar, uint64_t base, uint64_t size, uint16_t bdf)
 int
 main(uint32_t magic, struct mbi *mbi)
 {
-  serial_init();
+  serial_init_bda();
   printf("\nZapp %s\n", version_str);
   printf("Blame Julian Stecklina <jsteckli@os.inf.tu-dresden.de> for bugs.\n\n");
 

@@ -76,12 +76,12 @@ main(uint32_t magic, struct mbi *mbi)
     if ((mbi->flags & MBI_FLAG_CMDLINE) != 0)
       parse_cmdline((const char *)mbi->cmdline);
   } else {
-    serial_init();
+    serial_init_bda();
     printf("Not loaded by Multiboot-compliant loader. Bye.\n");
     return 1;
   }
 
-  serial_init();
+  serial_init_bda();
   printf("\nMorbo %s\n", version_str);
   printf("Blame Julian Stecklina <jsteckli@os.inf.tu-dresden.de> for bugs.\n\n");
 

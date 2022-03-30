@@ -126,7 +126,7 @@ main(uint32_t magic, void *multiboot)
   }
 
   if (serial_ports(get_bios_data_area()))
-    serial_init();
+    serial_init_bda();
 
   printf("Bender: Hello World.\n");
 

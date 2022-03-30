@@ -10,7 +10,7 @@
 int
 main(uint32_t magic, struct mbi *mbi)
 {
-  serial_init();
+  serial_init_bda();
 
   if (magic != MBI_MAGIC) {
     printf("Not loaded by Multiboot-compliant loader. Bye.\n");

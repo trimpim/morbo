@@ -50,16 +50,11 @@ serial_send (int c)
   outb (serial_base + THR, c);
 }
 
-void
-serial_init()
+void serial_init(uint16_t const base)
 {
-  /* Disable output if there is no serial port. */
-  /* XXX This is disabled, because it is not reliable. */
-  //output_enabled = (serial_ports(get_bios_data_area()) > 0);
   output_enabled = true;
 
-  /* Get our port from the BIOS data area. */
-  serial_base = get_bios_data_area()->com_port[0];
+  serial_base = base;
 
   /* Programming the first serial adapter (8N1) */
   outb (serial_base + LCR, LCR_DLAB);
@@ -76,6 +71,13 @@ serial_init()
   outb (serial_base + IER, 0);
   outb (serial_base + FCR, FCR_FIFO_ENABLE | FCR_RECV_FIFO_RESET | FCR_TMIT_FIFO_RESET);
   outb (serial_base + MCR, MCR_DTR | MCR_RTS);
+}
+
+void serial_init_bda()
+{
+  /* Get our port from the BIOS data area. */
+  if (get_bios_data_area()->com_port[0])
+    serial_init(get_bios_data_area()->com_port[0]);
 }
 
 /* EOF */
