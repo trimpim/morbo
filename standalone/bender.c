@@ -85,12 +85,16 @@ static void uart_init(bool const efi_boot)
 
   }
 
+  printf("A iobase=%x efi_boot=%u serial_fallback=%u\n", iobase, efi_boot, serial_fallback);
+ 
   /* no pci card and non efi boot */
   if (!iobase && !efi_boot) {
     if (serial_ports(get_bios_data_area()))
        iobase = get_bios_data_area()->com_port[0];
   }
 
+  printf("B iobase=%x efi_boot=%u serial_fallback=%u\n", iobase, efi_boot, serial_fallback);
+ 
   /* no pci card and serial_fallback */
   if (!iobase && serial_fallback) {
     if (efi_boot)
@@ -100,6 +104,8 @@ static void uart_init(bool const efi_boot)
       iobase = 0x3f8;
   }
 
+  printf("C iobase=%x efi_boot=%u serial_fallback=%u\n", iobase, efi_boot, serial_fallback);
+ 
   if (iobase) {
     serial_init(iobase);
     printf("\nBender %s\n", version_str);
@@ -124,6 +130,8 @@ int
 main(uint32_t magic, void *multiboot)
 {
   bool efi_boot = false;
+
+  serial_init(0x3f8);
 
   if (magic == MBI_MAGIC) {
     struct mbi * mbi = (struct mbi *)multiboot;
